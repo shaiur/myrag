@@ -17,3 +17,4 @@ Format: `- YYYY-MM-DD — idea (one line)`
 - 2026-10-28 — Summary feedback loop: rate/comment on summary quality and use past feedback to improve the summary prompt automatically.
 - 2026-10-28 — `--relevance-check` command: loop over all KB entries one at a time, send each to the LLM to check if it is still relevant (dated, contradicted by newer entries, low value), and recommend: keep / edit / delete / change score. Recommendations only; Shai approves each change.
 - 2026-10-28 — Summary granularity: point count grows with "one claim per point" and the merge test didn't help (the two rules conflict). Revisit after ~2 weeks of real entries.
+- 2026-10-28 — In-tool LLM revision at review: "[i]nstruct" option, e.g. "shorten point 4", re-runs the LLM on the draft. For now: use Claude Code on the draft opened in VS Code.

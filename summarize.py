@@ -57,12 +57,7 @@ Fields:
 - applicability: when and how an agent should use this, and when not.
 - caveats: what limits how much to trust or apply the source. Empty list if none.
 
-Classify the source into exactly one topic from this closed list:
-{topics}
-
-If none of the topics fits, propose a new one: a short lowercase slug (letters, digits, hyphens),
-set "topic_is_proposal": true and give a one-line "proposed_topic_description".
-Otherwise "topic_is_proposal" is false and "proposed_topic_description" is "".
+{classification}
 
 Score the source 1-5 ("ai_score") on these criteria, combined:
 - source credibility
@@ -86,6 +81,16 @@ Return ONLY a JSON object, no prose, no code fences, with exactly these keys:
   "ai_score": 1,
   "ai_score_reason": "string"
 }}"""
+
+CLASSIFY_FREE = """Classify the source into exactly one topic from this closed list:
+{topics}
+
+If none of the topics fits, propose a new one: a short lowercase slug (letters, digits, hyphens),
+set "topic_is_proposal": true and give a one-line "proposed_topic_description".
+Otherwise "topic_is_proposal" is false and "proposed_topic_description" is ""."""
+
+CLASSIFY_FIXED = """The topic is already decided: "{topic}" ({desc}). Use it as "topic" with
+"topic_is_proposal": false and "proposed_topic_description": "". Do not classify."""
 
 LIST_FIELDS = ("key_points", "evidence", "caveats", "tags")
 STR_FIELDS = ("title", "core_idea", "applicability", "topic", "ai_score_reason")
@@ -156,18 +161,27 @@ def validate(data: dict, topics: dict[str, str]) -> list[str]:
     return errors
 
 
-def summarize(src: Source) -> dict:
-    """One LLM call returning validated summary JSON. Retries once if the JSON is invalid."""
+def summarize(src: Source, forced_topic: str = "") -> dict:
+    """One LLM call returning validated summary JSON. Retries once if the JSON is invalid.
+
+    forced_topic (must exist in topics.yaml) skips classification.
+    """
     load_dotenv()
     api_key, model, kb_path = (os.getenv(k) for k in ("OPENROUTER_API_KEY", "MODEL", "KB_PATH"))
     if not (api_key and model and kb_path):
         raise SystemExit("OPENROUTER_API_KEY, MODEL and KB_PATH must be set in .env")
     topics = load_topics(kb_path)
+    if forced_topic and forced_topic not in topics:
+        raise SystemExit(f"unknown topic '{forced_topic}'; choose from {list(topics)}")
     topic_list = "\n".join(f"- {name}: {desc}" for name, desc in topics.items())
+    if forced_topic:
+        classification = CLASSIFY_FIXED.format(topic=forced_topic, desc=topics[forced_topic])
+    else:
+        classification = CLASSIFY_FREE.format(topics=topic_list)
 
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT.format(topics=topic_list)},
+        {"role": "system", "content": SYSTEM_PROMPT.format(classification=classification)},
         {"role": "user", "content": build_user_message(src)},
     ]
     for attempt in (1, 2):
@@ -176,6 +190,8 @@ def summarize(src: Source) -> dict:
         try:
             data = parse_json(raw)
             errors = validate(data, topics)
+            if forced_topic and data.get("topic") != forced_topic:
+                errors.append(f"topic must be '{forced_topic}'")
         except ValueError as e:  # json.JSONDecodeError is a ValueError
             data, errors = None, [f"invalid JSON: {e}"]
         if not errors:
