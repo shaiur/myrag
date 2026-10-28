@@ -33,10 +33,13 @@ def main() -> None:
         raise SystemExit(f"unknown topic '{args.topic}'; choose from {', '.join(topics)}")
 
     dup = find_duplicate(kb_path, args.url)
+    replaces = None
     if dup:
         print(f"Already in the knowledge base: {dup}")
-        if input("Continue anyway? [y/N] ").strip().lower() not in ("y", "yes"):
+        ans = input("[r]e-run and replace it on approve / [a]dd a second entry / [q]uit: ").strip().lower()
+        if ans not in ("r", "a"):
             return
+        replaces = dup if ans == "r" else None
 
     src = get_source(args.url)
     print(f"Summarizing {len(src.text)} chars...")
@@ -44,8 +47,8 @@ def main() -> None:
     entry = review(src, summary, topics)
     if entry is None:
         return
-    path = save_entry(kb_path, entry)
-    print(f"\nSaved and committed: {path}"
+    path = save_entry(kb_path, entry, replaces=replaces)
+    print(f"\n{'Replaced' if replaces else 'Saved'} and committed: {path}"
           + (f" (new topic '{entry.new_topic[0]}' added)" if entry.new_topic else ""))
 
 

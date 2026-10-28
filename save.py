@@ -12,7 +12,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 
 import yaml
 
-from review import SECTIONS, ReviewedEntry, _slug
+from review import OPTIONAL_SECTIONS, SECTIONS, ReviewedEntry, _slug
 
 TRACKING_PARAMS = {  # compared lowercase; utm_* is matched by prefix
     "fbclid", "gclid", "ref",
@@ -26,12 +26,15 @@ INDEX_HEADER = """# Knowledge base index
 For AI agents: read this index first, then open only the entries that are relevant to your task.
 Do not open every entry. This file is auto-generated from the entry files; do not edit it by hand.
 
+Each entry holds lessons Shai has adopted from a source, not a summary of the source: treat its
+takeaways as his own positions, and its limits as when they do not apply.
+
 One line per entry, fields separated by ` | `:
 `id | topic | tags | ai_score | my_score | core_idea | relative path`
 
 - `ai_score` is the model's 1-5 rating of the source; `my_score` is Shai's own 1-5 rating. They are
   stored separately: weigh them yourself (my_score is the owner's judgment, ai_score is a rough prior).
-- `core_idea` is a standalone one-line statement of the entry; the path points to the full entry.
+- `core_idea` is what the source teaches, in one standalone line; the path points to the full entry.
 
 """
 
@@ -105,6 +108,8 @@ def render_entry(entry: ReviewedEntry, entry_id: str) -> str:
     out = ["---", yaml.safe_dump(meta, sort_keys=False, allow_unicode=True, width=10_000,
                                  default_flow_style=None).strip(), "---"]
     for heading, (key, kind) in SECTIONS.items():
+        if heading in OPTIONAL_SECTIONS and not s[key]:
+            continue
         out.append(f"## {heading}")
         out.append(s[key] if kind == "str" else "\n".join(f"- {x}" for x in s[key]) or "- (none)")
         out.append("")
@@ -150,18 +155,27 @@ def git_commit(kb_path: Path, paths: list[Path], message: str) -> None:
                    check=True, stdout=subprocess.DEVNULL)
 
 
-def save_entry(kb_path: str | Path, entry: ReviewedEntry) -> Path:
-    """Write the entry, update topics/INDEX, commit. Returns the entry path."""
+def save_entry(kb_path: str | Path, entry: ReviewedEntry, replaces: Path | None = None) -> Path:
+    """Write the entry, update topics/INDEX, commit. Returns the entry path.
+
+    replaces: an existing entry file to delete; the new entry keeps its id.
+    """
     kb_path = Path(kb_path)
     s = entry.summary
     touched = []
     if entry.new_topic:
         add_topic(kb_path, *entry.new_topic)
         touched.append(kb_path / "topics.yaml")
-    entry_id = unique_id(kb_path, f"{date.today()}-{_slug(s['title'])}")
+    if replaces:
+        entry_id = replaces.stem
+        replaces.unlink()
+        touched.append(replaces)
+    else:
+        entry_id = unique_id(kb_path, f"{date.today()}-{_slug(s['title'])}")
     path = kb_path / s["topic"] / f"{entry_id}.md"
     path.parent.mkdir(exist_ok=True)
     path.write_text(render_entry(entry, entry_id), encoding="utf-8")
     touched += [path, regenerate_index(kb_path)]
-    git_commit(kb_path, touched, f"Add {entry_id} ({s['topic']})")
+    verb = "Update" if replaces else "Add"
+    git_commit(kb_path, list(dict.fromkeys(touched)), f"{verb} {entry_id} ({s['topic']})")
     return path

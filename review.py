@@ -1,7 +1,8 @@
 """Milestone 4: terminal review of a summarized entry.
 
-review(src, summary, topics) shows the summary, lets Shai fix the topic, give my_score / my_note,
-then approve / edit / reject. Edit round-trips through a Markdown draft in drafts/.
+review(src, summary, topics) shows the review summary (not saved) and then the KB entry that
+will be saved, lets Shai fix the topic, give my_score / my_note, then approve / edit / reject.
+Edit acts on the KB entry only and round-trips through a Markdown draft in drafts/.
 Returns a ReviewedEntry on approve, None on reject. Writes nothing to the knowledge base.
 """
 import os
@@ -21,20 +22,19 @@ from summarize import validate
 DRAFTS_DIR = Path(__file__).parent / "drafts"
 EDITOR_CMD = os.getenv("MYRAG_EDITOR", "code --wait")
 
-SECTIONS = {  # heading -> (summary key, kind)
+SECTIONS = {  # saved entry: heading -> (summary key, kind)
     "Core idea": ("core_idea", "str"),
-    "Key points": ("key_points", "list"),
-    "Evidence / data": ("evidence", "list"),
-    "Applicability": ("applicability", "str"),
-    "Caveats": ("caveats", "list"),
+    "Takeaways": ("takeaways", "list"),
+    "Limits": ("limits", "list"),
 }
+OPTIONAL_SECTIONS = {"Limits"}
 
 
 @dataclass
 class ReviewedEntry:
     """Handed to milestone 5 (save). new_topic is (name, description) if Shai approved one."""
     source: Source
-    summary: dict  # title, core_idea, key_points, evidence, applicability, caveats, topic, tags, ai_score, ai_score_reason
+    summary: dict  # title, core_idea, takeaways, limits, topic, tags, ai_score, ai_score_reason
     my_score: int
     my_note: str
     new_topic: tuple[str, str] | None
@@ -68,6 +68,16 @@ def show(s: dict, src: Source, topics: dict[str, str], my_score: int | None, my_
     print(f"\n{rule}\n{_c('1', s['title'])}")
     origin = src.url or "manual paste"
     print(f"{origin} | {src.author or 'author unknown'} | {src.published or 'date unknown'}")
+    rs = s["review_summary"]
+    print(f"\n{_c('1;36', '--- REVIEW SUMMARY (for your judgment, NOT saved) ---')}")
+    print(f"\n{_c('1', 'Key points')}")
+    _bullets(rs["key_points"])
+    print(f"\n{_c('1', 'Evidence / data')}")
+    _bullets(rs["evidence"])
+    print(f"\n{_c('1', 'Caveats')}")
+    _bullets(rs["caveats"])
+
+    print(f"\n{_c('1;32', '--- WILL BE SAVED (knowledge base entry) ---')}")
     print(f"tags: {', '.join(s['tags'])}")
     if s["topic_is_proposal"]:
         print(_c("1;33", f"TOPIC: NEW TOPIC PROPOSED -> '{s['topic']}'")
@@ -76,13 +86,10 @@ def show(s: dict, src: Source, topics: dict[str, str], my_score: int | None, my_
     else:
         print(f"TOPIC: {_c('1;32', s['topic'])} - {topics[s['topic']]}")
     print(f"\n{_c('1', 'Core idea')}\n  {_fmt(s['core_idea'])}")
-    print(f"\n{_c('1', 'Key points')}")
-    _bullets(s["key_points"])
-    print(f"\n{_c('1', 'Evidence / data')}")
-    _bullets(s["evidence"])
-    print(f"\n{_c('1', 'Applicability')}\n  {_fmt(s['applicability'])}")
-    print(f"\n{_c('1', 'Caveats')}")
-    _bullets(s["caveats"])
+    print(f"\n{_c('1', 'Takeaways')}")
+    _bullets(s["takeaways"])
+    print(f"\n{_c('1', 'Limits')}")
+    _bullets(s["limits"])
     print(f"\nai_score: {s['ai_score']}/5 - {_fmt(s['ai_score_reason'])}")
     if my_score:
         print(f"my_score: {my_score}/5" + (f" | note: {my_note}" if my_note else ""))
@@ -176,9 +183,9 @@ def read_draft(path: Path, old: dict, topics: dict[str, str]) -> tuple[dict, int
     parts = re.split(r"^## (.+?)\s*$", m.group(2), flags=re.M)
     found = {parts[i]: parts[i + 1].strip() for i in range(1, len(parts) - 1, 2)}
     for heading, (key, kind) in SECTIONS.items():
-        if heading not in found:
+        if heading not in found and heading not in OPTIONAL_SECTIONS:
             raise ValueError(f"section '## {heading}' is missing")
-        body = found[heading]
+        body = found.get(heading, "")
         if kind == "str":
             s[key] = body
         else:
@@ -236,7 +243,8 @@ def review(src: Source, summary: dict, topics: dict[str, str]) -> ReviewedEntry 
             return None
         if ans == "a":
             new_topic = (s["topic"], s["proposed_topic_description"]) if s["topic_is_proposal"] else None
-            out = {k: v for k, v in s.items() if k not in ("topic_is_proposal", "proposed_topic_description")}
+            out = {k: v for k, v in s.items()
+                   if k not in ("topic_is_proposal", "proposed_topic_description", "review_summary")}
             return ReviewedEntry(src, out, my_score, my_note, new_topic)
         edited = edit_draft(s, topics, my_score, my_note)
         if edited:

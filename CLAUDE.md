@@ -24,12 +24,26 @@ goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea)
   No automated LinkedIn login in v1.
 - Summary language: technical English, optimized for LLM reading. The reader is an AI agent
   acting on Shai's behalf (code, test strategy, investment decision, post).
-- Summarization principle: Summaries capture the idea (what and why), not the implementation
-  (how, with which tool): no tool names, versions or code examples anywhere. Each key_point is
-  one sentence with one claim; merge points an agent would act on the same way. Code samples
-  and demos are never evidence. No word limits. core_idea is the line used in INDEX.md.
+- The KB stores the lessons Shai adopts, not article summaries. Saving an entry means he agrees,
+  so justification (data, statistics, studies) does not go in the KB.
+- One LLM call returns two parts:
+  - `review_summary` (key points with data, evidence, caveats): shown at review so Shai can
+    judge the source. NOT saved.
+  - The KB entry: `core_idea` (what the source teaches, one line, the INDEX.md line),
+    `takeaways`, optional `limits`, `ai_score` + `ai_score_reason`.
+- Takeaways: each one a conclusion or decision, one sentence, no justification, no numbers
+  unless the number itself is the decision ("Replace fixed sleeps with condition-based waits",
+  not "Async wait causes ~45% of flaky tests..."). A short "because ..." (a few words, no data)
+  only when an expert could not infer the reason. Keep the source's priority words ("top cause",
+  "first"). Merge takeaways an agent would act on the same way.
+- Limits: when a takeaway does NOT apply. Each limit quotes a few words of its takeaway,
+  never its position (takeaways get reordered at review). Source bias or datedness goes in `ai_score_reason`.
+- Entry principle: the idea (what and why), not the implementation (how, with which tool):
+  no tool names, versions or code examples in the entry. Code samples and demos are never
+  evidence. No word limits.
 - Only from the source: outside knowledge is allowed only to judge the source (dated, biased,
-  contradicted) and is marked inline with "[model]:".
+  contradicted) and is marked inline with "[model]:". In the entry, "[model]:" items appear
+  only in Limits.
 - Topics: closed list in `KB_PATH/topics.yaml`. The agent always says which topic it chose.
   If nothing fits, it proposes a new topic and Shai approves. A `--topic` flag overrides classification.
 - Scores: both stored separately, never merged at save time.
@@ -50,24 +64,18 @@ saved: 2026-10-26
 topic: qa
 tags: [automation, ai-testing]
 ai_score: 4
-ai_score_reason: "one line"
+ai_score_reason: "one line"    # source bias / datedness goes here
 my_score: 5
 my_note: "agree, except X"   # optional, one line, Shai's own take, filled in at review
 ---
 ## Core idea
-One standalone line (this is the entry's line in INDEX.md).
+What the source teaches, one standalone line (this is the entry's line in INDEX.md).
 
-## Key points
-- ...
+## Takeaways
+- One conclusion or decision per line, no justification.
 
-## Evidence / data
-- ...
-
-## Applicability
-How/when to use this.
-
-## Caveats
-- ...
+## Limits                     # optional; omitted when empty
+- When a takeaway does not apply. "[model]:" items only here.
 ```
 
 ## Knowledge base layout
@@ -86,8 +94,9 @@ No code for that feature in v1.
 ## v1 milestones
 1. Project setup: venv, dependencies, `.env`, KB folder + `topics.yaml`, git init.
 2. Fetch: URL → clean text; manual paste fallback.
-3. LLM step: one call returning JSON (summary sections, topic, tags, ai_score, reason).
-4. Terminal review: show result, allow changing topic, give my_score, optional my_note input, approve / reject / edit.
+3. LLM step: one call returning JSON (review_summary, KB entry sections, topic, tags, ai_score, reason).
+4. Terminal review: show review_summary, then the KB entry labelled "WILL BE SAVED"; allow changing
+   topic, give my_score, optional my_note input, approve / reject / edit (edit acts on the KB entry only).
 5. Save: write Markdown file, regenerate `INDEX.md`, git commit.
 
 ## Working agreement
