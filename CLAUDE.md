@@ -22,8 +22,14 @@ goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea)
 - Knowledge base lives in its own folder/repo; its path is set in `.env` (`KB_PATH`).
 - Input: URL → automatic text extraction. Fallback: manual paste (for LinkedIn, paywalls).
   No automated LinkedIn login in v1.
-- Summary language: technical English, optimized for LLM reading.
-  Priority 1: the core idea is preserved and understandable to an LLM. Priority 2: short.
+- Summary language: technical English, optimized for LLM reading. The reader is an AI agent
+  acting on Shai's behalf (code, test strategy, investment decision, post).
+- Summarization principle: Summaries capture the idea (what and why), not the implementation
+  (how, with which tool): no tool names, versions or code examples anywhere. Each key_point is
+  one sentence with one claim; merge points an agent would act on the same way. Code samples
+  and demos are never evidence. No word limits. core_idea is the line used in INDEX.md.
+- Only from the source: outside knowledge is allowed only to judge the source (dated, biased,
+  contradicted) and is marked inline with "[model]:".
 - Topics: closed list in `KB_PATH/topics.yaml`. The agent always says which topic it chose.
   If nothing fits, it proposes a new topic and Shai approves. A `--topic` flag overrides classification.
 - Scores: both stored separately, never merged at save time.
@@ -46,9 +52,10 @@ tags: [automation, ai-testing]
 ai_score: 4
 ai_score_reason: "one line"
 my_score: 5
+my_note: "agree, except X"   # optional, one line, Shai's own take, filled in at review
 ---
 ## Core idea
-1-2 sentences.
+One standalone line (this is the entry's line in INDEX.md).
 
 ## Key points
 - ...
@@ -80,7 +87,7 @@ No code for that feature in v1.
 1. Project setup: venv, dependencies, `.env`, KB folder + `topics.yaml`, git init.
 2. Fetch: URL → clean text; manual paste fallback.
 3. LLM step: one call returning JSON (summary sections, topic, tags, ai_score, reason).
-4. Terminal review: show result, allow changing topic, give my_score, approve / reject / edit.
+4. Terminal review: show result, allow changing topic, give my_score, optional my_note input, approve / reject / edit.
 5. Save: write Markdown file, regenerate `INDEX.md`, git commit.
 
 ## Working agreement

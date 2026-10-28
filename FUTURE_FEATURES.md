@@ -14,4 +14,6 @@ New ideas that come up during v1 go here, not into the code.
 
 ## Parking lot (ideas raised during the build — logged only, not implemented)
 Format: `- YYYY-MM-DD — idea (one line)`
--
+- 2026-10-28 — Summary feedback loop: rate/comment on summary quality and use past feedback to improve the summary prompt automatically.
+- 2026-10-28 — `--relevance-check` command: loop over all KB entries one at a time, send each to the LLM to check if it is still relevant (dated, contradicted by newer entries, low value), and recommend: keep / edit / delete / change score. Recommendations only; Shai approves each change.
+- 2026-10-28 — Summary granularity: point count grows with "one claim per point" and the merge test didn't help (the two rules conflict). Revisit after ~2 weeks of real entries.
