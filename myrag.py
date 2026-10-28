@@ -1,4 +1,4 @@
-"""MyRAG entry point (v1 through milestone 4): fetch -> summarize -> review.
+"""MyRAG entry point (v1 through milestone 5): dedupe -> fetch -> summarize -> review -> save.
 
 Usage:
     python myrag.py <url> [--topic NAME]
@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from fetch import get_source
 from review import review
+from save import find_duplicate, save_entry
 from summarize import load_topics, summarize
 
 
@@ -31,16 +32,21 @@ def main() -> None:
     if args.topic and args.topic not in topics:
         raise SystemExit(f"unknown topic '{args.topic}'; choose from {', '.join(topics)}")
 
+    dup = find_duplicate(kb_path, args.url)
+    if dup:
+        print(f"Already in the knowledge base: {dup}")
+        if input("Continue anyway? [y/N] ").strip().lower() not in ("y", "yes"):
+            return
+
     src = get_source(args.url)
     print(f"Summarizing {len(src.text)} chars...")
     summary = summarize(src, forced_topic=args.topic)
     entry = review(src, summary, topics)
     if entry is None:
         return
-    # Milestone 5 will save `entry`; for now just confirm.
-    print(f"\nApproved (not saved yet - milestone 5): {entry.summary['title']!r} "
-          f"| topic={entry.summary['topic']} | my_score={entry.my_score}"
-          + (f" | NEW TOPIC {entry.new_topic}" if entry.new_topic else ""))
+    path = save_entry(kb_path, entry)
+    print(f"\nSaved and committed: {path}"
+          + (f" (new topic '{entry.new_topic[0]}' added)" if entry.new_topic else ""))
 
 
 if __name__ == "__main__":
