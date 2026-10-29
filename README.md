@@ -3,9 +3,9 @@
 A terminal tool that turns a link (or pasted text) into a reviewed entry in a personal
 knowledge base (KB) that AI agents can read.
 
-The KB stores **lessons Shai has adopted**, not article summaries. An agent acting on his behalf
+The KB stores **lessons Shai Urman has adopted**, not article summaries. An agent acting on your behalf
 (writing code, designing a test strategy, making an investment decision, drafting a post) reads
-the KB to act the way he would. Saving an entry means he agrees with it, so entries hold
+the KB to act the way you would. Saving an entry means you agree with it, so entries hold
 conclusions and decisions, not the data that justified them.
 
 ## How it works
@@ -93,28 +93,33 @@ git clone <this repo> myrag && cd myrag
 python -m venv venv
 venv\Scripts\activate            # Windows; on macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env             # then fill it in
+copy .env.example .env           # macOS/Linux: cp; then fill it in
 ```
 
 `.env` (gitignored, never commit it):
 ```
 OPENROUTER_API_KEY=...                  # your OpenRouter key
 MODEL=anthropic/claude-sonnet-5.5       # any OpenRouter model id
-KB_PATH=/path/to/myrag-kb               # the knowledge base folder (its own git repo)
+KB_PATH=../myrag-kb                     # the knowledge base folder (its own git repo)
 ```
+A relative `KB_PATH` is resolved against the project folder, not the current directory.
 
-Create the knowledge base repo:
-```bash
-mkdir myrag-kb && cd myrag-kb && git init
+Create the knowledge base next to the project folder, as its own git repo:
+```bat
+mkdir ..\myrag-kb
+copy kb_template\topics.example.yaml ..\myrag-kb\topics.yaml
+git -C ..\myrag-kb init
 ```
-Then create `topics.yaml` in it, with one `slug: one-line description` per topic:
-```yaml
-qa: Software testing, test automation, AI-assisted testing, QA process
-development: Programming, software architecture, tools, AI/LLM engineering
-investing: Markets, investing strategy, financial analysis
-companies: Specific companies, products, news and company analysis
-```
-Topic folders and `INDEX.md` are created on the first save.
+The KB is kept in a separate folder and repo because it is the asset: anything done to the
+project folder, such as `git clean` or a fresh clone, must never touch it.
+
+Edit `topics.yaml` to suit you. Each line is one topic, written as `slug: one-line description`:
+- **slug**: the topic name. Use lowercase letters, digits and hyphens (e.g. `ai-agents`). It
+  becomes the folder name for the topic's entries and the value you pass to `--topic`.
+- **description**: one line saying what belongs in the topic. The model reads it to choose the
+  topic, so make it specific.
+
+Save the file as UTF-8. The list must not be empty. Topic folders and `INDEX.md` are created on the first save.
 
 ## How an agent uses the KB
 
@@ -146,5 +151,6 @@ Topic folders and `INDEX.md` are created on the first save.
 | `save.py` | Writes the entry file, URL normalization and duplicate check, `INDEX.md`, KB git commit. |
 | `requirements.txt` | Pinned dependencies. |
 | `.env.example` | Template for `.env`. |
+| `kb_template/` | Starter files for a new KB: `topics.example.yaml` holds the default topics. |
 | `CLAUDE.md` | Project decisions and v1 scope: the source of truth for design choices. |
 | `FUTURE_FEATURES.md` | Ideas deliberately left out of v1. |

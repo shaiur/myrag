@@ -17,6 +17,7 @@ from openai import OpenAI
 
 from fetch import Source, get_source
 
+PROJECT_DIR = Path(__file__).resolve().parent
 MAX_INPUT_CHARS = 150_000  # ~40k tokens; caps cost on very long pages
 TOPIC_SLUG = re.compile(r"^[a-z][a-z0-9-]*$")
 
@@ -127,7 +128,17 @@ STR_FIELDS = ("title", "core_idea", "topic", "ai_score_reason")
 REVIEW_FIELDS = ("key_points", "evidence", "caveats", "model_notes")  # review_summary lists, never saved
 
 
-def load_topics(kb_path: str) -> dict[str, str]:
+def get_kb_path() -> Path:
+    """Load .env from the project folder; a relative KB_PATH is resolved against that folder."""
+    load_dotenv(PROJECT_DIR / ".env")
+    raw = os.getenv("KB_PATH")
+    if not raw:
+        raise SystemExit("KB_PATH must be set in .env")
+    path = Path(raw).expanduser()
+    return path if path.is_absolute() else (PROJECT_DIR / path).resolve()
+
+
+def load_topics(kb_path: str | Path) -> dict[str, str]:
     path = Path(kb_path) / "topics.yaml"
     topics = yaml.safe_load(path.read_text(encoding="utf-8-sig")) or {}
     if not topics:
@@ -212,10 +223,10 @@ def summarize(src: Source, forced_topic: str = "") -> dict:
 
     forced_topic (must exist in topics.yaml) skips classification.
     """
-    load_dotenv()
-    api_key, model, kb_path = (os.getenv(k) for k in ("OPENROUTER_API_KEY", "MODEL", "KB_PATH"))
-    if not (api_key and model and kb_path):
-        raise SystemExit("OPENROUTER_API_KEY, MODEL and KB_PATH must be set in .env")
+    kb_path = get_kb_path()
+    api_key, model = os.getenv("OPENROUTER_API_KEY"), os.getenv("MODEL")
+    if not (api_key and model):
+        raise SystemExit("OPENROUTER_API_KEY and MODEL must be set in .env")
     topics = load_topics(kb_path)
     if forced_topic and forced_topic not in topics:
         raise SystemExit(f"unknown topic '{forced_topic}'; choose from {list(topics)}")

@@ -5,14 +5,11 @@ Usage:
     python myrag.py --paste [--topic NAME]
 """
 import argparse
-import os
-
-from dotenv import load_dotenv
 
 from fetch import get_source
 from review import review
 from save import find_duplicate, save_entry
-from summarize import load_topics, summarize
+from summarize import get_kb_path, load_topics, summarize
 
 
 def main() -> None:
@@ -24,10 +21,7 @@ def main() -> None:
     if bool(args.url) == args.paste:
         ap.error("give either a <url> or --paste")
 
-    load_dotenv()
-    kb_path = os.getenv("KB_PATH")
-    if not kb_path:
-        raise SystemExit("KB_PATH must be set in .env")
+    kb_path = get_kb_path()
     topics = load_topics(kb_path)
     if args.topic and args.topic not in topics:
         raise SystemExit(f"unknown topic '{args.topic}'; choose from {', '.join(topics)}")
