@@ -2,6 +2,8 @@
 
 Read this file at the start of every session. It holds the decisions made so far.
 
+**Status:** v1 done 2026-10-29; 2-week usage phase, no new features.
+
 ## Goal (the only goal of v1)
 A terminal tool that takes a link (or pasted text), summarizes it for LLM consumption,
 classifies it into a topic, scores it, lets Shai review and score it, and saves it
