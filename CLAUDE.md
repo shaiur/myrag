@@ -27,8 +27,9 @@ goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea)
 - The KB stores the lessons Shai adopts, not article summaries. Saving an entry means he agrees,
   so justification (data, statistics, studies) does not go in the KB.
 - One LLM call returns two parts:
-  - `review_summary` (key points with data, evidence, caveats): shown at review so Shai can
-    judge the source. NOT saved.
+  - `review_summary` (key points with data, evidence, caveats, model notes): shown at review
+    so Shai can judge the source. NOT saved. "Model notes" hold the model's own critiques and
+    exceptions from outside knowledge; Shai can adopt one by adding it as a takeaway.
   - The KB entry: `core_idea` (what the source teaches, one line, the INDEX.md line),
     `takeaways`, optional `limits`, `ai_score` + `ai_score_reason`.
 - Takeaways: each one a conclusion or decision, one sentence, no justification, no numbers
@@ -37,16 +38,15 @@ goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea)
   only when an expert could not infer the reason. Keep the source's priority words ("top cause",
   "first"). Merge takeaways an agent would act on the same way. Say what to do, not how it is
   built (drop details like "through decoupled queues").
-- Limits: when a takeaway does NOT apply. A limit never restates another takeaway; "what to do
+- Limits: only situations the source itself says a takeaway does NOT apply to. Usually empty,
+  and that's fine. A limit never restates another takeaway; "what to do
   instead" only when it is new. Each limit quotes a few words of its takeaway,
   never its position (takeaways get reordered at review). Source bias or datedness goes in `ai_score_reason`.
 - Entry principle: the idea (what and why), not the implementation (how, with which tool):
   no tool names, versions or code examples in the entry. Code samples and demos are never
   evidence. No word limits.
-- Only from the source: outside knowledge is allowed only to judge the source (dated, biased,
-  contradicted) and is marked inline with "[model]:". In the entry, "[model]:" items appear
-  only in Limits. [model]: items are the summarizing model's own notes, not Shai's positions;
-  weigh them accordingly.
+- Only from the source: the saved entry contains only what the source says, with no
+  "[model]:" items. The model's own knowledge goes only in `review_summary` model notes.
 - Topics: closed list in `KB_PATH/topics.yaml`. The agent always says which topic it chose.
   If nothing fits, it proposes a new topic and Shai approves. A `--topic` flag overrides classification.
 - Scores: both stored separately, never merged at save time.
@@ -78,7 +78,7 @@ What the source teaches, one standalone line (this is the entry's line in INDEX.
 - One conclusion or decision per line, no justification.
 
 ## Limits                     # optional; omitted when empty
-- When a takeaway does not apply. "[model]:" items only here.
+- A situation the source itself says a takeaway does not apply to. Usually empty.
 ```
 
 ## Knowledge base layout

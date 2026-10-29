@@ -19,4 +19,3 @@ Format: `- YYYY-MM-DD — idea (one line)`
 - 2026-10-28 — Summary granularity: point count grows with "one claim per point" and the merge test didn't help (the two rules conflict). Revisit after ~2 weeks of real entries.
 - 2026-10-28 — In-tool LLM revision at review: "[i]nstruct" option, e.g. "shorten point 4", re-runs the LLM on the draft. For now: use Claude Code on the draft opened in VS Code.
 - 2026-10-29 — Takeaways still feel too long. Track at review: too many takeaways, or each one too long? Fix the prompt once after ~2 weeks of real entries.
-- 2026-10-29 — Explicit [model] decision at review: an entry can't be saved while it has [model]: items. For each one Shai must delete it or adopt it (removing the [model]: prefix, so it becomes his position).

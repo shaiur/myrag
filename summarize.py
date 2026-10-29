@@ -33,9 +33,9 @@ stores the lessons Shai adopts, not summaries of articles. One answer has two pa
    post. It reads the entry instead of the source and must act the way Shai would.
 
 Rules for both parts:
-- Only from the source: state only what the source says. Outside knowledge is allowed only
-  when it helps judge the source (dated, biased, contradicted). Mark every such item inline
-  with the prefix "[model]:" and say what it adds or contradicts.
+- Only from the source: every field except review_summary.model_notes states only what the
+  source says. Your own knowledge (critiques, contradicting research, exceptions the source
+  does not mention) goes only in review_summary.model_notes. Never use a "[model]:" prefix.
 - Plain technical English. No filler, no marketing tone, no "the article discusses". No word
   limits: length follows substance. A long article that repeats itself gets a short answer.
 - Code samples and demos are never evidence.
@@ -50,8 +50,13 @@ Fields:
 - review_summary.evidence: the data or experience behind the claims (measurements, study
   results, "we did X for N years and saw Y"), and how strong it is. Not a list of who is
   cited. Empty list if there is none.
-- review_summary.caveats: what limits trust in the source: datedness, bias, conflicts of
-  interest, weak method, claims without support. Empty list if none.
+- review_summary.caveats: what limits trust in the source, as visible from the source itself:
+  datedness, bias, conflicts of interest, weak method, claims without support, internal
+  contradictions. Empty list if none.
+- review_summary.model_notes: your own notes from outside knowledge: where the source is
+  contradicted or overstated, and situations where one of its takeaways would not hold that
+  the source does not mention. Shai reads these at review and may adopt one as a takeaway.
+  Say what each note adds or contradicts. Empty list if none.
 - core_idea: what the source teaches, one standalone line. It is the entry's line in INDEX.md:
   an agent reading only this line must be able to tell whether the entry is relevant.
   No judgment of the source here (bias, data quality): that goes in ai_score_reason.
@@ -63,19 +68,19 @@ Fields:
   A takeaway may end with a short "because ..." (a few words, no data) only when an expert
   could not infer the reason; it lets an agent judge when the rule applies. Keep priority
   words from the source ("top cause", "first", "most important"). Merge any two takeaways an
-  agent would act on the same way. No "[model]:" items in takeaways.
+  agent would act on the same way.
   Say what to do, not how it is built: drop mechanism and architecture details
   (e.g. "Isolate slow consumers", not "Isolate slow consumers through decoupled queues").
-- limits: when a takeaway does NOT apply (context, scale, situation). Each limit names the
-  situation; it refers to a takeaway in the list, not to something the entry does not say.
+- limits: only situations the source itself says a takeaway does NOT apply to (context,
+  scale, situation). Usually empty, and that is fine: do not invent limits. Your own
+  exceptions go in review_summary.model_notes. Each limit refers to a takeaway in the list.
   Add what to do instead only when it is new: never restate another takeaway, and never
   write a limit that only says a takeaway does not cover what other takeaways already
   cover. Start each limit by quoting a few words of that takeaway in double quotes, e.g.
   "Replace fixed sleeps": ... Never refer to a takeaway by its position ("third takeaway",
   "#3"): takeaways get reordered at review. Same style as takeaways: no data, studies or
   numbers. Trust in the source (vendor bias, old or weak data, unverified claims) never goes
-  here: it goes in ai_score_reason. "[model]:" items are allowed only here and must be
-  marked. Empty list if none.
+  here: it goes in ai_score_reason.
 
 {classification}
 
@@ -93,7 +98,8 @@ Return ONLY a JSON object, no prose, no code fences, with exactly these keys:
   "review_summary": {{
     "key_points": ["one sentence", ...],
     "evidence": ["string", ...],
-    "caveats": ["string", ...]
+    "caveats": ["string", ...],
+    "model_notes": ["string", ...]
   }},
   "core_idea": "string",
   "takeaways": ["one sentence", ...],
@@ -118,7 +124,7 @@ CLASSIFY_FIXED = """The topic is already decided: "{topic}" ({desc}). Use it as 
 
 LIST_FIELDS = ("takeaways", "limits", "tags")
 STR_FIELDS = ("title", "core_idea", "topic", "ai_score_reason")
-REVIEW_FIELDS = ("key_points", "evidence", "caveats")  # review_summary lists, never saved
+REVIEW_FIELDS = ("key_points", "evidence", "caveats", "model_notes")  # review_summary lists, never saved
 
 
 def load_topics(kb_path: str) -> dict[str, str]:
@@ -160,10 +166,11 @@ def validate(data: dict, topics: dict[str, str]) -> list[str]:
             errors.append(f"'{f}' must be a list of strings")
     if not data.get("takeaways"):
         errors.append("'takeaways' must not be empty")
-    model_items = [x for x in [data.get("core_idea")] + list(data.get("takeaways") or [])
-                   if isinstance(x, str) and "[model]:" in x]
-    if model_items:
-        errors.append("'[model]:' items are allowed only in 'limits', not in core_idea or takeaways")
+    saved_text = [data.get("core_idea"), data.get("ai_score_reason")]
+    saved_text += list(data.get("takeaways") or []) + list(data.get("limits") or [])
+    if any(isinstance(x, str) and "[model]:" in x for x in saved_text):
+        errors.append("no '[model]:' items in the saved entry; your own notes go in "
+                      "'review_summary.model_notes'")
     rs = data.get("review_summary")
     if not isinstance(rs, dict):
         errors.append("'review_summary' must be an object")

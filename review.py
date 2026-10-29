@@ -77,6 +77,8 @@ def show(s: dict, src: Source, topics: dict[str, str], my_score: int | None, my_
     _bullets(rs["evidence"])
     print(f"\n{_c('1', 'Caveats')}")
     _bullets(rs["caveats"])
+    print(f"\n{_c('1;33', 'Model notes')} (the model's own knowledge, not from the source)")
+    _bullets(rs["model_notes"])
 
     print(f"\n{_c('1;32', '--- WILL BE SAVED (knowledge base entry) ---')}")
     print(f"tags: {', '.join(s['tags'])}")
