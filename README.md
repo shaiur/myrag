@@ -3,7 +3,7 @@
 A terminal tool that turns a link (or pasted text) into a reviewed entry in a personal
 knowledge base (KB) that AI agents can read.
 
-The KB stores **lessons Shai Urman has adopted**, not article summaries. An agent acting on your behalf
+The KB stores **lessons you have adopted**, not article summaries. An agent acting on your behalf
 (writing code, designing a test strategy, making an investment decision, drafting a post) reads
 the KB to act the way you would. Saving an entry means you agree with it, so entries hold
 conclusions and decisions, not the data that justified them.
@@ -72,7 +72,7 @@ that reads them.
 
 | Command | What it does |
 |---|---|
-| `yy` | Full flow: duplicate check, fetch, summarize, review, save, commit. |
+| `python myrag.py <url>` | Full flow: duplicate check, fetch, summarize, review, save, commit. |
 | `python myrag.py --paste` | Same flow, but you paste the text. End it with a line containing only `END`, or Ctrl-Z then Enter. You are then asked for title, author and date (all optional). |
 | `--topic NAME` | Works with either form above. Uses an existing topic and skips classification. |
 | `python summarize.py <url>` / `--paste` | Debug: fetch and summarize, then print the JSON. Nothing is saved. |
@@ -88,32 +88,53 @@ Prerequisites:
 - VS Code with `code` on PATH, or another editor set through `MYRAG_EDITOR`
 - an [OpenRouter](https://openrouter.ai) API key
 
-Commands are for Windows (cmd or PowerShell); macOS/Linux equivalents are in the comments.
+**Cost:** you use your own OpenRouter key and pay OpenRouter per use. There is one LLM call per
+link (two if the first answer is invalid); the price depends on the model and the article length.
+
+Install, on Windows (cmd or PowerShell):
 ```bat
-git clone <this repo> myrag
+git clone https://github.com/shaiur/myrag.git
 cd myrag
 python -m venv venv
-venv\Scripts\activate            # Windows; on macOS/Linux: source venv/bin/activate
+venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env           # macOS/Linux: cp; then fill it in
+copy .env.example .env
+```
+On macOS/Linux:
+```bash
+git clone https://github.com/shaiur/myrag.git
+cd myrag
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
 ```
 
-`.env` (gitignored, never commit it):
+Fill in `.env` (gitignored, never commit it):
 ```
 OPENROUTER_API_KEY=...                  # your OpenRouter key
 MODEL=anthropic/claude-sonnet-5.5       # any OpenRouter model id
 KB_PATH=../myrag-kb                     # the knowledge base folder (its own git repo)
+USER_NAME=Alex                          # whose KB this is; used in the prompt and INDEX.md
 ```
-A relative `KB_PATH` is resolved against the project folder, not the current directory.
+A relative `KB_PATH` is resolved against the project folder, not the current directory. If
+`USER_NAME` is empty, "the user" is used.
 
 Create the knowledge base next to the project folder, as its own git repo. Run these from the
-project folder (`myrag`). If you set a different `KB_PATH`, use that path instead of `..\myrag-kb`.
+project folder (`myrag`). If you set a different `KB_PATH`, use that path instead.
+
+Windows:
 ```bat
 mkdir ..\myrag-kb
 copy kb_template\topics.example.yaml ..\myrag-kb\topics.yaml
 git -C ..\myrag-kb init
 ```
-On macOS/Linux, use `cp` and `/` instead of `copy` and `\`.
+macOS/Linux:
+```bash
+mkdir -p ../myrag-kb
+cp kb_template/topics.example.yaml ../myrag-kb/topics.yaml
+git -C ../myrag-kb init
+```
 
 The tool checks the KB on every start, before fetching or calling the LLM. If the folder is
 missing, has no `topics.yaml`, is not its own git repo, or git has no user name or email, it
@@ -135,8 +156,9 @@ Save the file as UTF-8. The list must not be empty. Topic folders and `INDEX.md`
    `id | topic | tags | ai_score | my_score | core_idea | path`.
 2. Use `core_idea`, `topic`, `tags` and the scores to choose the relevant entries. Open only
    those, not every entry.
-3. Treat an entry's takeaways as Shai's positions, and its limits as the cases where they do not
-   apply. `my_score` is his judgment of the source; `ai_score` is a rough prior.
+3. Treat an entry's takeaways as the KB owner's positions, and its limits as the cases where
+   they do not apply. `my_score` is the owner's judgment of the source; `ai_score` is a rough
+   prior.
 
 ## Known limits
 
@@ -161,4 +183,6 @@ Save the file as UTF-8. The list must not be empty. Topic folders and `INDEX.md`
 | `.env.example` | Template for `.env`. |
 | `kb_template/` | Starter files for a new KB: `topics.example.yaml` holds the default topics. |
 | `CLAUDE.md` | Project decisions and v1 scope: the source of truth for design choices. |
+| `CLAUDE.local.md` | Optional personal notes for Claude Code (gitignored, not in the repo). |
 | `FUTURE_FEATURES.md` | Ideas deliberately left out of v1. |
+| `LICENSE` | MIT. |

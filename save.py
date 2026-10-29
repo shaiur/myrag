@@ -15,7 +15,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 import yaml
 
 from review import OPTIONAL_SECTIONS, SECTIONS, ReviewedEntry, _slug
-from summarize import PROJECT_DIR
+from summarize import PROJECT_DIR, get_user_name
 
 TRACKING_PARAMS = {  # compared lowercase; utm_* is matched by prefix
     "fbclid", "gclid", "ref",
@@ -29,12 +29,13 @@ INDEX_HEADER = """# Knowledge base index
 For AI agents: read this index first, then open only the entries that are relevant to your task.
 Do not open every entry. This file is auto-generated from the entry files; do not edit it by hand.
 
-Each entry holds lessons Shai has adopted from a source, not a summary of the source: treat its
-takeaways as his own positions, and its limits as when they do not apply.
+Each entry holds lessons {user} has adopted from a source, not a summary of the source: treat
+its takeaways as {user}'s own positions, and its limits as when they do not apply.
+
 One line per entry, fields separated by ` | `:
 `id | topic | tags | ai_score | my_score | core_idea | relative path`
 
-- `ai_score` is the model's 1-5 rating of the source; `my_score` is Shai's own 1-5 rating. They are
+- `ai_score` is the model's 1-5 rating of the source; `my_score` is {user}'s own 1-5 rating. They are
   stored separately: weigh them yourself (my_score is the owner's judgment, ai_score is a rough prior).
 - `core_idea` is what the source teaches, in one standalone line; the path points to the full entry.
 
@@ -194,7 +195,7 @@ def regenerate_index(kb_path: str | Path) -> Path:
             [str(meta.get("id", path.stem)), str(meta.get("topic", "")), tags,
              str(meta.get("ai_score", "")), str(meta.get("my_score", "")), core, rel])))
     index = kb_path / "INDEX.md"
-    index.write_text(INDEX_HEADER + "\n".join(line for _, line in sorted(lines)) + "\n", encoding="utf-8")
+    index.write_text(INDEX_HEADER.format(user=get_user_name()) +"\n".join(line for _, line in sorted(lines)) + "\n", encoding="utf-8")
     return index
 
 

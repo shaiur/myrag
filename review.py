@@ -1,7 +1,7 @@
 """Milestone 4: terminal review of a summarized entry.
 
 review(src, summary, topics) shows the review summary (not saved) and then the KB entry that
-will be saved, lets Shai fix the topic, give my_score / my_note, then approve / edit / reject.
+will be saved, lets the user fix the topic, give my_score / my_note, then approve / edit / reject.
 Edit acts on the KB entry only and round-trips through a Markdown draft in drafts/.
 Returns a ReviewedEntry on approve, None on reject. Writes nothing to the knowledge base.
 """
@@ -32,7 +32,7 @@ OPTIONAL_SECTIONS = {"Limits"}
 
 @dataclass
 class ReviewedEntry:
-    """Handed to milestone 5 (save). new_topic is (name, description) if Shai approved one."""
+    """Handed to milestone 5 (save). new_topic is (name, description) if the user approved one."""
     source: Source
     summary: dict  # title, core_idea, takeaways, limits, topic, tags, ai_score, ai_score_reason
     my_score: int

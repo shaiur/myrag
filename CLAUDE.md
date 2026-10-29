@@ -6,32 +6,33 @@ Read this file at the start of every session. It holds the decisions made so far
 
 ## Goal (the only goal of v1)
 A terminal tool that takes a link (or pasted text), summarizes it for LLM consumption,
-classifies it into a topic, scores it, lets Shai review and score it, and saves it
+classifies it into a topic, scores it, lets the user review and score it, and saves it
 into a personal knowledge base that other AI agents can read.
 
-**Done = Shai pastes a link and a reviewed entry lands in the knowledge base, committed to git.**
+**Done = the user pastes a link and a reviewed entry lands in the knowledge base, committed to git.**
 
 ## SCOPE RULE (important)
-Shai tends to add features instead of finishing. If a request is not needed for the v1
-goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea) and do not implement it. Go along only if he insists.
+v1 has one goal (above). If a request is not needed for it, push back and log it in
+`FUTURE_FEATURES.md` (one line: date + idea) instead of implementing it. Implement it only if
+the user insists.
 
 ## Decisions
 - Language: Python, VS Code, terminal only (no UI in v1).
 - LLM: called through OpenRouter (OpenAI-compatible API), Claude model. Model name in config, not hard-coded.
 - Secrets: API key lives in `.env` (gitignored). Never paste keys into chat or code.
-- Storage: local folder of Markdown files, versioned with git (private GitHub backup).
+- Storage: local folder of Markdown files, versioned with git (the KB repo is backed up to a private remote).
   One file per entry, in a folder per topic. Move to a DB later (see FUTURE_FEATURES.md).
 - Knowledge base lives in its own folder/repo; its path is set in `.env` (`KB_PATH`).
 - Input: URL → automatic text extraction. Fallback: manual paste (for LinkedIn, paywalls).
   No automated LinkedIn login in v1.
 - Summary language: technical English, optimized for LLM reading. The reader is an AI agent
-  acting on Shai's behalf (code, test strategy, investment decision, post).
-- The KB stores the lessons Shai adopts, not article summaries. Saving an entry means he agrees,
+  acting on the user's behalf (code, test strategy, investment decision, post).
+- The KB stores the lessons the user adopts, not article summaries. Saving an entry means the user agrees,
   so justification (data, statistics, studies) does not go in the KB.
 - One LLM call returns two parts:
   - `review_summary` (key points with data, evidence, caveats, model notes): shown at review
-    so Shai can judge the source. NOT saved. "Model notes" hold the model's own critiques and
-    exceptions from outside knowledge; Shai can adopt one by adding it as a takeaway.
+    so the user can judge the source. NOT saved. "Model notes" hold the model's own critiques and
+    exceptions from outside knowledge; the user can adopt one by adding it as a takeaway.
   - The KB entry: `core_idea` (what the source teaches, one line, the INDEX.md line),
     `takeaways`, optional `limits`, `ai_score` + `ai_score_reason`.
 - Takeaways: each one a conclusion or decision, one sentence, no justification, no numbers
@@ -51,10 +52,10 @@ goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea)
 - Only from the source: the saved entry contains only what the source says, with no
   "[model]:" items. The model's own knowledge goes only in `review_summary` model notes.
 - Topics: closed list in `KB_PATH/topics.yaml`. The agent always says which topic it chose.
-  If nothing fits, it proposes a new topic and Shai approves. A `--topic` flag overrides classification.
+  If nothing fits, it proposes a new topic and the user approves. A `--topic` flag overrides classification.
 - Scores: both stored separately, never merged at save time.
   - `ai_score` 1-5, criteria: source credibility, evidence/data, actionability, novelty vs. common takes.
-  - `my_score` 1-5, given by Shai at review.
+  - `my_score` 1-5, given by the user at review.
   - Any weighting between them is computed later at query time.
 
 ## Entry format
@@ -72,7 +73,7 @@ tags: [automation, ai-testing]
 ai_score: 4
 ai_score_reason: "one line"    # source bias / datedness goes here
 my_score: 5
-my_note: "agree, except X"   # optional, one line, Shai's own take, filled in at review
+my_note: "agree, except X"   # optional, one line, the user's own take, filled in at review
 ---
 ## Core idea
 What the source teaches, one standalone line (this is the entry's line in INDEX.md).
@@ -107,3 +108,5 @@ No code for that feature in v1.
 
 ## Working agreement
 - One Claude Code session per milestone. Update this file when a decision changes.
+- The user's name comes from `USER_NAME` in `.env`. Personal notes for a local setup go in
+  `CLAUDE.local.md` (gitignored).

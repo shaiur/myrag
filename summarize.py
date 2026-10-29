@@ -21,17 +21,17 @@ PROJECT_DIR = Path(__file__).resolve().parent
 MAX_INPUT_CHARS = 150_000  # ~40k tokens; caps cost on very long pages
 TOPIC_SLUG = re.compile(r"^[a-z][a-z0-9-]*$")
 
-SYSTEM_PROMPT = """You process sources for Shai's personal knowledge base. The knowledge base
-stores the lessons Shai adopts, not summaries of articles. One answer has two parts:
+SYSTEM_PROMPT = """You process sources for {user}'s personal knowledge base. The knowledge base
+stores the lessons {user} adopts, not summaries of articles. One answer has two parts:
 
-1. review_summary: for Shai's eyes only, shown while he decides whether he agrees with the
-   source. It is NOT saved. It must let him judge the source: its claims, the data behind
-   them, and its weaknesses.
-2. The knowledge base entry (core_idea, takeaways, limits, ai_score): what gets saved if he
-   approves. Saving means he agrees, so the entry states conclusions and decisions, never
-   their justification. Who reads the entry: not a human, but an AI agent that will later act
-   on Shai's behalf: write code, design a test strategy, make an investment decision, write a
-   post. It reads the entry instead of the source and must act the way Shai would.
+1. review_summary: for {user}'s eyes only, shown while {user} decides whether to agree with
+   the source. It is NOT saved. It must make it possible to judge the source: its claims, the
+   data behind them, and its weaknesses.
+2. The knowledge base entry (core_idea, takeaways, limits, ai_score): what gets saved if
+   {user} approves. Saving means {user} agrees, so the entry states conclusions and decisions,
+   never their justification. Who reads the entry: not a human, but an AI agent that will later
+   act on {user}'s behalf: write code, design a test strategy, make an investment decision,
+   write a post. It reads the entry instead of the source and must act the way {user} would.
 
 Rules for both parts:
 - Only from the source: every field except review_summary.model_notes states only what the
@@ -56,7 +56,7 @@ Fields:
   contradictions. Empty list if none.
 - review_summary.model_notes: your own notes from outside knowledge: where the source is
   contradicted or overstated, and situations where one of its takeaways would not hold that
-  the source does not mention. Shai reads these at review and may adopt one as a takeaway.
+  the source does not mention. {user} reads these at review and may adopt one as a takeaway.
   Say what each note adds or contradicts. Empty list if none.
 - core_idea: what the source teaches, one standalone line. It is the entry's line in INDEX.md:
   an agent reading only this line must be able to tell whether the entry is relevant.
@@ -136,6 +136,12 @@ def get_kb_path() -> Path:
         raise SystemExit("KB_PATH must be set in .env")
     path = Path(raw).expanduser()
     return path if path.is_absolute() else (PROJECT_DIR / path).resolve()
+
+
+def get_user_name() -> str:
+    """USER_NAME from .env: whose knowledge base this is. Falls back to "the user"."""
+    load_dotenv(PROJECT_DIR / ".env")
+    return (os.getenv("USER_NAME") or "").strip() or "the user"
 
 
 def load_topics(kb_path: str | Path) -> dict[str, str]:
@@ -238,7 +244,8 @@ def summarize(src: Source, forced_topic: str = "") -> dict:
 
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT.format(classification=classification)},
+        {"role": "system", "content": SYSTEM_PROMPT.format(
+            user=get_user_name(), classification=classification)},
         {"role": "user", "content": build_user_message(src)},
     ]
     for attempt in (1, 2):
