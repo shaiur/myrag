@@ -35,15 +35,18 @@ goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea)
   unless the number itself is the decision ("Replace fixed sleeps with condition-based waits",
   not "Async wait causes ~45% of flaky tests..."). A short "because ..." (a few words, no data)
   only when an expert could not infer the reason. Keep the source's priority words ("top cause",
-  "first"). Merge takeaways an agent would act on the same way.
-- Limits: when a takeaway does NOT apply. Each limit quotes a few words of its takeaway,
+  "first"). Merge takeaways an agent would act on the same way. Say what to do, not how it is
+  built (drop details like "through decoupled queues").
+- Limits: when a takeaway does NOT apply. A limit never restates another takeaway; "what to do
+  instead" only when it is new. Each limit quotes a few words of its takeaway,
   never its position (takeaways get reordered at review). Source bias or datedness goes in `ai_score_reason`.
 - Entry principle: the idea (what and why), not the implementation (how, with which tool):
   no tool names, versions or code examples in the entry. Code samples and demos are never
   evidence. No word limits.
 - Only from the source: outside knowledge is allowed only to judge the source (dated, biased,
   contradicted) and is marked inline with "[model]:". In the entry, "[model]:" items appear
-  only in Limits.
+  only in Limits. [model]: items are the summarizing model's own notes, not Shai's positions;
+  weigh them accordingly.
 - Topics: closed list in `KB_PATH/topics.yaml`. The agent always says which topic it chose.
   If nothing fits, it proposes a new topic and Shai approves. A `--topic` flag overrides classification.
 - Scores: both stored separately, never merged at save time.

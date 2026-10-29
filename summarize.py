@@ -64,14 +64,18 @@ Fields:
   could not infer the reason; it lets an agent judge when the rule applies. Keep priority
   words from the source ("top cause", "first", "most important"). Merge any two takeaways an
   agent would act on the same way. No "[model]:" items in takeaways.
+  Say what to do, not how it is built: drop mechanism and architecture details
+  (e.g. "Isolate slow consumers", not "Isolate slow consumers through decoupled queues").
 - limits: when a takeaway does NOT apply (context, scale, situation). Each limit names the
-  situation and what to do instead; it refers to a takeaway in the list, not to something
-  the entry does not say. Start each limit by quoting a few words of that takeaway in
-  double quotes, e.g. "Replace fixed sleeps": ... Never refer to a takeaway by its position
-  ("third takeaway", "#3"): takeaways get reordered at review. Same style as takeaways: no data, studies or numbers. Trust in the
-  source (vendor bias, old or weak data, unverified claims) never goes here: it goes in
-  ai_score_reason. "[model]:" items are allowed only here and must be marked. Empty list if
-  none.
+  situation; it refers to a takeaway in the list, not to something the entry does not say.
+  Add what to do instead only when it is new: never restate another takeaway, and never
+  write a limit that only says a takeaway does not cover what other takeaways already
+  cover. Start each limit by quoting a few words of that takeaway in double quotes, e.g.
+  "Replace fixed sleeps": ... Never refer to a takeaway by its position ("third takeaway",
+  "#3"): takeaways get reordered at review. Same style as takeaways: no data, studies or
+  numbers. Trust in the source (vendor bias, old or weak data, unverified claims) never goes
+  here: it goes in ai_score_reason. "[model]:" items are allowed only here and must be
+  marked. Empty list if none.
 
 {classification}
 

@@ -70,6 +70,7 @@ def show(s: dict, src: Source, topics: dict[str, str], my_score: int | None, my_
     print(f"{origin} | {src.author or 'author unknown'} | {src.published or 'date unknown'}")
     rs = s["review_summary"]
     print(f"\n{_c('1;36', '--- REVIEW SUMMARY (for your judgment, NOT saved) ---')}")
+    print(f"\n{_c('1', 'Core idea')}\n  {_fmt(s['core_idea'])}")
     print(f"\n{_c('1', 'Key points')}")
     _bullets(rs["key_points"])
     print(f"\n{_c('1', 'Evidence / data')}")

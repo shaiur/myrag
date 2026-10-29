@@ -28,6 +28,7 @@ Do not open every entry. This file is auto-generated from the entry files; do no
 
 Each entry holds lessons Shai has adopted from a source, not a summary of the source: treat its
 takeaways as his own positions, and its limits as when they do not apply.
+[model]: items are the summarizing model's own notes, not Shai's positions; weigh them accordingly.
 
 One line per entry, fields separated by ` | `:
 `id | topic | tags | ai_score | my_score | core_idea | relative path`
