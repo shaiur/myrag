@@ -3,7 +3,9 @@
 save_entry(kb_path, entry) writes KB_PATH/<topic>/<id>.md, registers a new topic if needed,
 regenerates INDEX.md from all entry files, and commits in the KB repo.
 find_duplicate(kb_path, url) is the pre-fetch check on normalized URLs.
+check_kb(kb_path) is the startup check that the KB is a git repo with topics.yaml.
 """
+import os
 import re
 import subprocess
 from datetime import date
@@ -13,6 +15,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 import yaml
 
 from review import OPTIONAL_SECTIONS, SECTIONS, ReviewedEntry, _slug
+from summarize import PROJECT_DIR
 
 TRACKING_PARAMS = {  # compared lowercase; utm_* is matched by prefix
     "fbclid", "gclid", "ref",
@@ -36,6 +39,54 @@ One line per entry, fields separated by ` | `:
 - `core_idea` is what the source teaches, in one standalone line; the path points to the full entry.
 
 """
+
+
+# ---------- startup check ----------
+
+def _git_out(kb_path: Path, *args: str) -> str | None:
+    """stdout of a git command in kb_path, or None if it fails."""
+    try:
+        r = subprocess.run(["git", "-C", str(kb_path), *args], capture_output=True, text=True)
+    except FileNotFoundError:
+        raise SystemExit("git is not installed or not on PATH. Install git, then run again.")
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def check_kb(kb_path: Path) -> None:
+    """Exit with a fix-it message unless KB_PATH is a git repo root with topics.yaml.
+
+    Runs at startup so a broken KB fails before any fetch or LLM call.
+    """
+    win = os.name == "nt"
+    template = PROJECT_DIR / "kb_template" / "topics.example.yaml"
+    mkdir = f'mkdir "{kb_path}"' if win else f'mkdir -p "{kb_path}"'
+    copy = f'{"copy" if win else "cp"} "{template}" "{kb_path / "topics.yaml"}"'
+    init = f'git -C "{kb_path}" init'
+    problems, fixes = [], []
+    if not kb_path.is_dir():
+        problems.append("the folder does not exist")
+        fixes += [mkdir, copy, init]
+    else:
+        if not (kb_path / "topics.yaml").is_file():
+            problems.append("topics.yaml is missing")
+            fixes.append(copy)
+        top = _git_out(kb_path, "rev-parse", "--show-toplevel")
+        if top is None:
+            problems.append("it is not a git repository")
+            fixes.append(init)
+        elif Path(top).resolve() != kb_path.resolve():
+            problems.append(f"it is not its own git repository (it is inside the repo at {top})")
+            fixes.append(init)
+        elif not (_git_out(kb_path, "config", "user.name") and _git_out(kb_path, "config", "user.email")):
+            problems.append("git user.name / user.email are not set, so commits would fail")
+            fixes += ['git config --global user.name "Your Name"',
+                      'git config --global user.email "you@example.com"']
+    if problems:
+        raise SystemExit(
+            f"Knowledge base is not ready: {kb_path}  (KB_PATH in .env)\n"
+            + "".join(f"  - {p}\n" for p in problems)
+            + "Fix it with:\n" + "".join(f"  {f}\n" for f in fixes)
+            + "Then run again. See README.md, section Setup.")
 
 
 # ---------- duplicate check ----------

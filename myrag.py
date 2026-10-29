@@ -8,7 +8,7 @@ import argparse
 
 from fetch import get_source
 from review import review
-from save import find_duplicate, save_entry
+from save import check_kb, find_duplicate, save_entry
 from summarize import get_kb_path, load_topics, summarize
 
 
@@ -22,6 +22,7 @@ def main() -> None:
         ap.error("give either a <url> or --paste")
 
     kb_path = get_kb_path()
+    check_kb(kb_path)
     topics = load_topics(kb_path)
     if args.topic and args.topic not in topics:
         raise SystemExit(f"unknown topic '{args.topic}'; choose from {', '.join(topics)}")

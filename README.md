@@ -72,7 +72,7 @@ that reads them.
 
 | Command | What it does |
 |---|---|
-| `python myrag.py <url>` | Full flow: duplicate check, fetch, summarize, review, save, commit. |
+| `yy` | Full flow: duplicate check, fetch, summarize, review, save, commit. |
 | `python myrag.py --paste` | Same flow, but you paste the text. End it with a line containing only `END`, or Ctrl-Z then Enter. You are then asked for title, author and date (all optional). |
 | `--topic NAME` | Works with either form above. Uses an existing topic and skips classification. |
 | `python summarize.py <url>` / `--paste` | Debug: fetch and summarize, then print the JSON. Nothing is saved. |
@@ -84,12 +84,14 @@ Environment variable `MYRAG_EDITOR` sets the editor used by **edit**. The defaul
 
 Prerequisites:
 - Python 3.10+ (developed on 3.14)
-- git
+- git, with `user.name` and `user.email` set (the tool commits to the KB repo)
 - VS Code with `code` on PATH, or another editor set through `MYRAG_EDITOR`
 - an [OpenRouter](https://openrouter.ai) API key
 
-```bash
-git clone <this repo> myrag && cd myrag
+Commands are for Windows (cmd or PowerShell); macOS/Linux equivalents are in the comments.
+```bat
+git clone <this repo> myrag
+cd myrag
 python -m venv venv
 venv\Scripts\activate            # Windows; on macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
@@ -104,12 +106,18 @@ KB_PATH=../myrag-kb                     # the knowledge base folder (its own git
 ```
 A relative `KB_PATH` is resolved against the project folder, not the current directory.
 
-Create the knowledge base next to the project folder, as its own git repo:
+Create the knowledge base next to the project folder, as its own git repo. Run these from the
+project folder (`myrag`). If you set a different `KB_PATH`, use that path instead of `..\myrag-kb`.
 ```bat
 mkdir ..\myrag-kb
 copy kb_template\topics.example.yaml ..\myrag-kb\topics.yaml
 git -C ..\myrag-kb init
 ```
+On macOS/Linux, use `cp` and `/` instead of `copy` and `\`.
+
+The tool checks the KB on every start, before fetching or calling the LLM. If the folder is
+missing, has no `topics.yaml`, is not its own git repo, or git has no user name or email, it
+stops and prints the exact commands to fix it.
 The KB is kept in a separate folder and repo because it is the asset: anything done to the
 project folder, such as `git clean` or a fresh clone, must never touch it.
 
@@ -148,7 +156,7 @@ Save the file as UTF-8. The list must not be empty. Topic folders and `INDEX.md`
 | `fetch.py` | Extracts article text and metadata from a URL, with a manual paste fallback. |
 | `summarize.py` | Prompt, the single OpenRouter call, JSON parsing and validation, topic loading. |
 | `review.py` | Terminal review screen, topic and score prompts, and the edit-draft round trip. |
-| `save.py` | Writes the entry file, URL normalization and duplicate check, `INDEX.md`, KB git commit. |
+| `save.py` | Startup KB check, writes the entry file, URL normalization and duplicate check, `INDEX.md`, KB git commit. |
 | `requirements.txt` | Pinned dependencies. |
 | `.env.example` | Template for `.env`. |
 | `kb_template/` | Starter files for a new KB: `topics.example.yaml` holds the default topics. |
