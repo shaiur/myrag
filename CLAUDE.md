@@ -44,7 +44,8 @@ goal above, push back and log it in `FUTURE_FEATURES.md` (one line: date + idea)
   never its position (takeaways get reordered at review). Source bias or datedness goes in `ai_score_reason`.
 - Entry principle: the idea (what and why), not the implementation (how, with which tool):
   no tool names, versions or code examples in the entry. Code samples and demos are never
-  evidence. No word limits.
+  evidence. No word limits. Exception: tags may name tools (tags are for finding entries,
+  not content).
 - Only from the source: the saved entry contains only what the source says, with no
   "[model]:" items. The model's own knowledge goes only in `review_summary` model notes.
 - Topics: closed list in `KB_PATH/topics.yaml`. The agent always says which topic it chose.
